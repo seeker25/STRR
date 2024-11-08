@@ -92,9 +92,6 @@ class Config:  # pylint: disable=too-few-public-methods
     PUBLISHER_AUDIENCE = os.getenv(
         "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
     )
-    # SUB_AUDIENCE = os.getenv("SUB_AUDIENCE", "")
-    # SUB_SERVICE_ACCOUNT = os.getenv("SUB_SERVICE_ACCOUNT", "")
-
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # POSTGRESQL
@@ -103,13 +100,18 @@ class Config:  # pylint: disable=too-few-public-methods
     DB_NAME = os.getenv("DATABASE_NAME", "")
     DB_HOST = os.getenv("DATABASE_HOST", "")
     DB_PORT = os.getenv("DATABASE_PORT", "5432")
-    # POSTGRESQL
     if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
         SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{
             DB_PASSWORD}@/{DB_NAME}?unix_sock={DB_UNIX_SOCKET}/.s.PGSQL.5432"
     else:
         SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{
                 DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+    PAYMENT_SVC_URL = os.getenv("PAY_API_URL", "") + os.getenv("PAY_API_VERSION", "")
+    NOTIFY_API_URL = os.getenv("NOTIFY_API_URL", "")
+    NOTIFY_API_VERSION = os.getenv("NOTIFY_API_VERSION", "")
+    STRR_SERVICE_ACCOUNT_CLIENT_ID = os.getenv("STRR_SERVICE_ACCOUNT_CLIENT_ID")
+    STRR_SERVICE_ACCOUNT_SECRET = os.getenv("STRR_SERVICE_ACCOUNT_SECRET")
 
 
 class DevConfig(Config):  # pylint: disable=too-few-public-methods

@@ -41,6 +41,7 @@ from flask import Flask
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from strr_api import db
+from strr_api.services import strr_pay
 
 from .config import Config
 from .config import ProdConfig
@@ -62,6 +63,7 @@ def create_app(environment: Config = ProdConfig, **_kwargs) -> Flask:
         )
 
     db.init_app(app)
+    strr_pay.init_app(app)
     gcp_queue.init_app(app)
     register_endpoints(app)
 
