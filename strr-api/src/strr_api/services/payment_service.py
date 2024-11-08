@@ -79,11 +79,15 @@ class PayService:
         self.timeout = app.config.get("PAY_API_TIMEOUT", 20)
 
     def create_invoice(self, user_jwt: JwtManager, account_id, application=None):
-        """Create the invoice via the pay-api."""
+        """Create the invoice via the pay-api using jwt manager."""
+        token = user_jwt.get_token_auth_header()
+        self.create_invoice_with_token(token, account_id, application)
+
+    def create_invoice_with_token(self, token: str, account_id, application=None):
+        """Create the invoice via the pay-api using a token (possible service account)."""
         application_json = application.application_json
         payload = self._get_payment_request(application_json)
         try:
-            token = user_jwt.get_token_auth_header()
             headers = {
                 "Authorization": "Bearer " + token,
                 "Content-Type": "application/json",
@@ -119,13 +123,15 @@ class PayService:
         quantity = 1
         registration_json = application_json.get("registration", {})
         registration_type = registration_json.get("registrationType")
-        if registration_type == RegistrationType.HOST.value:
-            filing_type, quantity = self._get_host_filing_type(registration_json)
-        elif registration_type == RegistrationType.PLATFORM.value:
-            filing_type = self._get_platform_filing_type(registration_json)
-        elif registration_type == RegistrationType.STRATA_HOTEL.value:
-            filing_type = STRATA_HOTEL_REG
-
+        match registration_type:
+            case RegistrationType.HOST.value:
+                filing_type, quantity = self._get_host_filing_type(registration_json)
+            case RegistrationType.PLATFORM.value:
+                filing_type = self._get_platform_filing_type(registration_json)
+            case RegistrationType.STRATA_HOTEL.value:
+                filing_type = STRATA_HOTEL_REG
+            case _:
+                pass
         filing_type_dict = {"filingTypeCode": filing_type, "quantity": quantity}
 
         # Workaround to charge the service fee when the filing fee is 0.
