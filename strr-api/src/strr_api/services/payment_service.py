@@ -83,16 +83,17 @@ class PayService:
         token = user_jwt.get_token_auth_header()
         self.create_invoice_with_token(token, account_id, application)
 
-    def create_invoice_with_token(self, token: str, account_id, application=None):
+    def create_invoice_with_token(self, token: str, account_id=None, application=None):
         """Create the invoice via the pay-api using a token (possible service account)."""
         application_json = application.application_json
         payload = self._get_payment_request(application_json)
         try:
             headers = {
                 "Authorization": "Bearer " + token,
-                "Content-Type": "application/json",
-                "Account-Id": str(account_id),
+                "Content-Type": "application/json"
             }
+            if account_id:
+                headers["Account-Id"] = str(account_id)
             resp = requests.post(
                 url=self.svc_url + "/payment-requests", json=payload, headers=headers, timeout=self.timeout
             )
