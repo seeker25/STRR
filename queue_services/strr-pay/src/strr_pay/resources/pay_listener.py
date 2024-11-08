@@ -109,6 +109,7 @@ def worker():
     logger.info(f"completed ce: {str(ce)}")
     return {}, HTTPStatus.OK
 
+
 @dataclass
 class PaymentToken:
     """Payment Token class"""
@@ -118,15 +119,15 @@ class PaymentToken:
     filing_identifier: Optional[str] = None
     corp_type_code: Optional[str] = None
 
+
 def get_payment_token(ce: SimpleCloudEvent):
     """Return a PaymentToken if enclosed in the cloud event."""
     if ce.type == "bc.registry.payment" and isinstance(ce.data, dict):
         return PaymentToken(**dict_keys_to_snake_case(ce.data))
     return None
 
+
 def dict_keys_to_snake_case(d: dict):
     """Convert the keys of a dict to snake_case"""
     pattern = re.compile(r"(?<!^)(?=[A-Z])")
     return {pattern.sub("_", k).lower(): v for k, v in d.items()}
-
-
