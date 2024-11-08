@@ -47,6 +47,7 @@ from simple_cloudevent import SimpleCloudEvent
 from strr_api.models import Application
 from structured_logging import StructuredLogging
 
+from strr_api.models.payment_status import PaymentStatus
 from strr_pay.services import gcp_queue
 
 bp = Blueprint("worker", __name__)
@@ -57,6 +58,8 @@ logger = StructuredLogging.get_logger()
 @bp.route("/", methods=("POST",))
 def worker():
     """Process the incoming cloud event.
+
+    This worker processes queue messages issued out from pay-api through google pubsub and marks applications as paid.
 
     Flow
     --------
@@ -77,21 +80,15 @@ def worker():
 
     logger.info(f"Incoming raw msg: {str(request.data)}")
 
-    # 1. Get cloud event
-    # ##
     if not (ce := gcp_queue.get_simple_cloud_event(request, wrapped=True)):
-        #
-        # Decision here is to return a 200,
-        # so the event is removed from the Queue
+        # return a 200, so the event is removed from the Queue
         return {}, HTTPStatus.OK
     logger.info(f"received ce: {str(ce)}")
 
-    # 2. Get payment information
     if not (payment_token := get_payment_token(ce)) or payment_token.status_code != "COMPLETED":
         # no payment info, or not a payment COMPLETED token, take off Q
         return {}, HTTPStatus.OK
 
-    # 3. Update model
     application = Application.find_by_invoice_id(invoice_id=int(payment_token.id))
     if not application:
         # The payment token might not be there yet, put back on Q
@@ -104,15 +101,13 @@ def worker():
 
     logger.info(f"Processing payment: {payment_token.id}")
 
-    # setting the payment_completion_date, marks the application as paid
     application.payment_completion_date = datetime.now(timezone.utc)
-    application.payment_status_code = "COMPLETED"
+    application.payment_status_code = PaymentStatus.COMPLETED.value
     application.status = Application.Status.PAID
     application.save()
 
     logger.info(f"completed ce: {str(ce)}")
     return {}, HTTPStatus.OK
-
 
 @dataclass
 class PaymentToken:
@@ -123,22 +118,15 @@ class PaymentToken:
     filing_identifier: Optional[str] = None
     corp_type_code: Optional[str] = None
 
-
 def get_payment_token(ce: SimpleCloudEvent):
     """Return a PaymentToken if enclosed in the cloud event."""
-    # pylint: disable=fixme
-    # TODO move to common enums for ce.type = bc.registry.payment
-    if (ce.type == "bc.registry.payment") and (data := ce.data) and isinstance(data, dict):
-        converted = dict_keys_to_snake_case(data)
-        pt = PaymentToken(**converted)
-        return pt
+    if ce.type == "bc.registry.payment" and isinstance(ce.data, dict):
+        return PaymentToken(**dict_keys_to_snake_case(ce.data))
     return None
-
 
 def dict_keys_to_snake_case(d: dict):
     """Convert the keys of a dict to snake_case"""
     pattern = re.compile(r"(?<!^)(?=[A-Z])")
-    converted = {}
-    for k, v in d.items():
-        converted[pattern.sub("_", k).lower()] = v
-    return converted
+    return {pattern.sub("_", k).lower(): v for k, v in d.items()}
+
+
