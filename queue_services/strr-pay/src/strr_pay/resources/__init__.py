@@ -38,6 +38,7 @@ Provides the service that applies payments to applications.
 from flask import Flask
 
 from .pay_listener import bp as pay_listener_endpoint
+from .chefs_listener import bp as chefs_listener_endpoint
 
 
 def register_endpoints(app: Flask):
@@ -48,4 +49,9 @@ def register_endpoints(app: Flask):
     app.register_blueprint(
         url_prefix="/",
         blueprint=pay_listener_endpoint,
+    )
+
+    app.register_blueprint(
+        url_prefix="/chefs/",
+        blueprint=chefs_listener_endpoint,
     )
