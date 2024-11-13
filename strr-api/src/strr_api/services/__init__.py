@@ -40,6 +40,7 @@ from .document_service import DocumentService
 from .events_service import EventsService
 from .gcp_storage_service import GCPStorageService
 from .geocoder_service import GeoCoderService
+from .notify_service import NotifyService
 from .payment_service import PayService
 from .registration_service import RegistrationService
 from .rest_service import RestService
