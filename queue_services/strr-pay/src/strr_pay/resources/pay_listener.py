@@ -47,7 +47,7 @@ from simple_cloudevent import SimpleCloudEvent
 from strr_api.models import Application
 from structured_logging import StructuredLogging
 
-from strr_api.models.payment_status import PaymentStatus
+from strr_api.enums.enum import PaymentStatus
 from strr_pay.services import gcp_queue
 
 bp = Blueprint("worker", __name__)
